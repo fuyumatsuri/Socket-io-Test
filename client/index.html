@@ -1,0 +1,81 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8">
+	<title>Socket.io testing</title>
+	
+	<script src="http://localhost:1111/socket.io/socket.io.js"></script>
+	<script type="text/javascript" charset="utf-8">
+		function start() {
+			var socket = io.connect('http://localhost:1111');
+			var canvas = document.getElementById("game");
+			var context = canvas.getContext("2d");
+
+			var players = [];
+
+			function Player(id, x, y) {
+				this.id = id;
+				this.x = x;
+				this.y = y;
+			}
+
+			Player.prototype.set_pos = function(x, y) {
+				this.x = x;
+				this.y = y;
+			}
+
+			Player.prototype.draw = function() {
+				context.fillRect(this.x, this.y, 10, 10);
+			}
+
+			function draw() {
+				context.clearRect(0, 0, 500, 300);
+
+				for(var p in players) {
+					players[p].draw();
+				}
+			}
+
+			socket.on('new_player', function(data) {
+				players[data.id] = new Player(data.id, data.x, data.y);
+			});
+
+			socket.on('update_player', function(data) {
+				players[data.id].set_pos(data.x, data.y);
+			});
+			
+			document.onkeydown = function(event) {
+				var keyCode;
+
+				if(event == null) keyCode = window.event.keyCode;
+				else keyCode = event.keyCode;
+
+				socket.emit('key_down', keyCode);
+			}
+
+			window.requestAnimFrame = (function(){
+      			return window.requestAnimationFrame ||
+            		window.webkitRequestAnimationFrame ||
+            		window.mozRequestAnimationFrame ||
+            		window.oRequestAnimationFrame ||
+            		window.msRequestAnimationFrame ||
+            		function(/* function */ callback, /* DOMElement */ element){
+              			window.setTimeout(callback, 1000 / 60);
+            		};
+			})();	
+
+			(function loop() {
+				draw();
+				requestAnimFrame(loop, canvas);
+			})();
+		
+		}
+
+	</script>
+</head>
+<body onload="start()">
+
+<canvas id="game" width="500" height="300"></canvas>
+
+</body>
+</html>
