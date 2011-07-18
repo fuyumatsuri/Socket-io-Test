@@ -8,8 +8,16 @@
 	<script type="text/javascript" charset="utf-8">
 		function start() {
 			var socket = io.connect('http://localhost:1111');
+			var sessionId;
+
 			var canvas = document.getElementById("game");
 			var context = canvas.getContext("2d");
+
+			var player;
+
+			socket.on('connect', function() {
+				sessionId = socket.socket.sessionid;
+			});
 
 			var players = [];
 
@@ -17,6 +25,8 @@
 				this.id = id;
 				this.x = x;
 				this.y = y;
+				this.xDir = 0;
+				this.yDir = 0;
 			}
 
 			Player.prototype.set_pos = function(x, y) {
@@ -24,8 +34,42 @@
 				this.y = y;
 			}
 
+			/*
+			Player.prototype.move = function(x, y) {
+				this.x += x;
+				this.y += y;
+			}
+			*/
+
+			Player.prototype.set_x_dir = function(xDir) {
+				this.xDir = xDir;
+			}
+
+			Player.prototype.set_y_dir = function(yDir) {
+				this.yDir = yDir;
+			}
+			
+			Player.prototype.get_x_dir = function() {
+				return this.xDir;
+			}
+
+			Player.prototype.get_y_dir = function() {
+				return this.yDir;
+			}
+
+			Player.prototype.update = function() {
+				this.x += this.xDir * 2;
+				this.y += this.yDir * 2;
+			}
+
 			Player.prototype.draw = function() {
 				context.fillRect(this.x, this.y, 10, 10);
+			}
+
+			function update() {
+				for(var p in players) {
+					players[p].update();
+				}
 			}
 
 			function draw() {
@@ -36,21 +80,94 @@
 				}
 			}
 
+			function update_player() {
+				socket.emit('update_player',
+					player.id, player.x, player.y, player.xDir, player.yDir);
+			}
+
 			socket.on('new_player', function(data) {
 				players[data.id] = new Player(data.id, data.x, data.y);
+
+				//temp?
+				if(data.id == sessionId) player = players[sessionId];
 			});
 
-			socket.on('update_player', function(data) {
-				players[data.id].set_pos(data.x, data.y);
+			socket.on('update_player', function(id, x, y, xDir, yDir) {
+				if(id != sessionId)
+				players[id].set_pos(x, y);
+				players[id].set_x_dir(xDir);
+				players[id].set_y_dir(yDir);
 			});
 			
 			document.onkeydown = function(event) {
+				var keyCode;
+				var xDir, yDir;
+
+				if(event == null) keyCode = window.event.keyCode;
+				else keyCode = event.keyCode;
+
+				switch(keyCode)
+				{
+				case 37: //left
+					if(player.get_x_dir() != -1) {
+						player.set_x_dir(-1);
+						update_player();
+					}
+					break;
+				case 38: //up
+					if(player.get_y_dir() != -1) {
+						player.set_y_dir(-1);
+						update_player();
+					}
+					break;
+				case 39: //right
+					if(player.get_x_dir() != 1) {
+						player.set_x_dir(1);
+						update_player();
+					}
+					break;
+				case 40: //down
+					if(player.get_y_dir() != 1) {
+						player.set_y_dir(1);
+						update_player();
+					}
+					break;
+				}
+			}
+
+			document.onkeyup = function(event) {
 				var keyCode;
 
 				if(event == null) keyCode = window.event.keyCode;
 				else keyCode = event.keyCode;
 
-				socket.emit('key_down', keyCode);
+				switch(keyCode)
+				{
+				case 37: //left
+					if(player.get_x_dir() == -1) {
+						player.set_x_dir(0);
+						update_player();
+					}
+					break;
+				case 38: //up
+					if(player.get_y_dir() == -1) {
+						player.set_y_dir(0);
+						update_player();
+					}
+					break;
+				case 39: //right
+					if(player.get_x_dir() == 1) {
+						player.set_x_dir(0);
+						update_player();
+					}
+					break;
+				case 40: //down
+					if(player.get_y_dir() == 1) {
+						player.set_y_dir(0);
+						update_player();
+					}
+					break;
+				}
 			}
 
 			window.requestAnimFrame = (function(){
@@ -65,6 +182,7 @@
 			})();	
 
 			(function loop() {
+			 	update();
 				draw();
 				requestAnimFrame(loop, canvas);
 			})();
@@ -75,7 +193,7 @@
 </head>
 <body onload="start()">
 
-<canvas id="game" width="500" height="300"></canvas>
+<canvas id="game" width="500" height="500"></canvas>
 
 </body>
 </html>

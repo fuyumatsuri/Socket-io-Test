@@ -20,30 +20,9 @@ io.sockets.on('connection', function(socket) {
 	room.add_player(player);
 	console.log(room.players.join(", "));
 
-	socket.on('key_down', function(keyCode) {
-		switch(keyCode)
-		{
-			case 37: //left
-				player.move(-5,0);
-				break;
-			case 38: //up
-				player.move(0,-5);
-				break;
-			case 39: //right
-				player.move(5,0);
-				break;
-			case 40: //down
-				player.move(0,5);
-				break;
-		}
-
-		room.update(player);
+	socket.on('update_player', function(id, x, y, xDir, yDir) {
+		room.update_player(id, x, y, xDir, yDir);
 	});
-
-	//socket.emit('test', { hellow: 'world' });
-	//socket.on('test2', function(data) {
-	//	console.log(data);
-	//});
 });
 
 function Room(id) {
@@ -52,7 +31,7 @@ function Room(id) {
 }
 
 Room.prototype.add_player = function(player) {
-	this.players.push(player);
+	this.players[player.id] = player;
 
 	//Let anyone in the room know about the player
 	io.sockets.in(this.id).emit('new_player', player);
@@ -69,13 +48,19 @@ Room.prototype.get_state = function(socket) {
 }
 
 Room.prototype.update = function(player) {
-	io.sockets.in(this.id).emit('update_player', player);
+	io.sockets.in(this.id).emit('update_player', player.id, player.x, player.y);
+}
+
+Room.prototype.update_player = function(id, x, y, xDir, yDir) {
+	io.sockets.in(this.id).emit('update_player', id, x, y, xDir, yDir);
 }
 
 function Player(id, x, y) {
 	this.id = id;
 	this.x = x;
 	this.y = y;
+	this.xDir = 0;
+	this.yDir = 0;
 }
 
 Player.prototype.move = function(x, y) {
