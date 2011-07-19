@@ -23,6 +23,10 @@ io.sockets.on('connection', function(socket) {
 	socket.on('update_player', function(id, x, y, xDir, yDir) {
 		room.update_player(id, x, y, xDir, yDir);
 	});
+
+	socket.on('disconnect', function() {
+		room.remove_player(player.id);
+	});
 });
 
 function Room(id) {
@@ -37,8 +41,19 @@ Room.prototype.add_player = function(player) {
 	io.sockets.in(this.id).emit('new_player', player);
 }
 
-Room.prototype.remove_player = function(player) {
-	this.players.splice(this.players.indexOf(player), 1);
+Room.prototype.remove_player = function(playerId) {
+	//Remove the player from the players list
+	delete this.players[playerId];
+
+	//Tell all the clients to git rid of the player
+	io.sockets.in(this.id).emit('delete_player', playerId);
+}
+
+//For debuging
+Room.prototype.list_players = function() {
+	for(var p in this.players) {
+		console.log(this.players[p].id);
+	}
 }
 
 Room.prototype.get_state = function(socket) {

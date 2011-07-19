@@ -93,10 +93,17 @@
 			});
 
 			socket.on('update_player', function(id, x, y, xDir, yDir) {
+				//If you are the player you are already in the right spot
 				if(id != sessionId)
-				players[id].set_pos(x, y);
-				players[id].set_x_dir(xDir);
-				players[id].set_y_dir(yDir);
+				{
+					players[id].set_pos(x, y);
+					players[id].set_x_dir(xDir);
+					players[id].set_y_dir(yDir);
+				}
+			});
+
+			socket.on('delete_player', function(id) {
+				delete players[id];
 			});
 			
 			document.onkeydown = function(event) {
