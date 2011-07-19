@@ -38,7 +38,8 @@ Room.prototype.add_player = function(player) {
 	this.players[player.id] = player;
 
 	//Let anyone in the room know about the player
-	io.sockets.in(this.id).emit('new_player', player);
+	io.sockets.in(this.id).emit('new_player', player.id, player.x,
+		player.y, player.xDir, player.yDir);
 }
 
 Room.prototype.remove_player = function(playerId) {
@@ -51,22 +52,26 @@ Room.prototype.remove_player = function(playerId) {
 
 //For debuging
 Room.prototype.list_players = function() {
-	for(var p in this.players) {
-		console.log(this.players[p].id);
+	for(var i in this.players) {
+		console.log(this.players[i].id);
 	}
 }
 
 Room.prototype.get_state = function(socket) {
-	for(var p in this.players) {
-		socket.emit('new_player', this.players[p]);
+	for(var i in this.players) {
+		socket.emit('new_player', this.players[i].id, this.players[i].x,
+			this.players[i].y, this.players[i].xDir, this.players[i].yDir);
 	}
 }
 
-Room.prototype.update = function(player) {
-	io.sockets.in(this.id).emit('update_player', player.id, player.x, player.y);
-}
-
 Room.prototype.update_player = function(id, x, y, xDir, yDir) {
+	//Update servers knowledge of the player
+	this.players[id].x = x;
+	this.players[id].y = y;
+	this.players[id].xDir = xDir;
+	this.players[id].yDir = yDir;
+
+	//Update the clients
 	io.sockets.in(this.id).emit('update_player', id, x, y, xDir, yDir);
 }
 
@@ -76,9 +81,4 @@ function Player(id, x, y) {
 	this.y = y;
 	this.xDir = 0;
 	this.yDir = 0;
-}
-
-Player.prototype.move = function(x, y) {
-	this.x += x;
-	this.y += y;
 }
