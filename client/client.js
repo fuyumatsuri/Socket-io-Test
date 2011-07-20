@@ -9,7 +9,7 @@ window.requestAnimFrame = (function(){
 		};
 })();	
 
-function client() {
+function Client() {
 	this.socket = null;
 	this.sessionId = null;
 
@@ -17,7 +17,7 @@ function client() {
 	this.player = null;
 }
 
-client.prototype.init = function(ctx) {
+Client.prototype.init = function(ctx) {
 	this.socket = io.connect('http://localhost:1111');
 	this.ctx = ctx;
 
@@ -56,7 +56,7 @@ client.prototype.init = function(ctx) {
 	});
 }
 
-client.prototype.keyboard_init = function () {
+Client.prototype.keyboard_init = function () {
 	var that = this;
 
 	window.addEventListener('keydown', function (evt) {
@@ -120,7 +120,7 @@ client.prototype.keyboard_init = function () {
 	}, true);
 }
 
-client.prototype.start = function() {
+Client.prototype.start = function() {
 	var that = this;
 	(function loop() {
 		that.update();
@@ -129,13 +129,13 @@ client.prototype.start = function() {
 	})();
 }
 
-client.prototype.update = function() {
+Client.prototype.update = function() {
 	for(var i in this.players) {
 		this.players[i].update();
 	}
 }
 
-client.prototype.draw = function() {
+Client.prototype.draw = function() {
 	this.ctx.clearRect(0, 0, 500, 500);
 
 	for(var i in this.players) {
@@ -143,7 +143,7 @@ client.prototype.draw = function() {
 	}
 }
 
-client.prototype.update_player = function() {
+Client.prototype.update_player = function() {
 	this.socket.emit('update_player', this.player.id,
 		this.player.x, this.player.y, this.player.xDir, this.player.yDir);
 }
@@ -188,7 +188,7 @@ Player.prototype.draw = function(ctx) {
 
 var canvas = document.getElementById("game");
 var ctx = canvas.getContext("2d");
-var game = new client();
+var game = new Client();
 
 game.init(ctx);
 game.start();
