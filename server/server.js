@@ -5,20 +5,27 @@ io.set('log level', 2);
 
 var rooms = [];
 
-var tempRoom = new Room(0);
-rooms[0] = tempRoom;
-
 io.sockets.on('connection', function(socket) {
 	var player = new Player(socket.id, Math.floor(Math.random()*501),
 		Math.floor(Math.random()*301));
-	var roomId = 0;
-	var room = rooms[roomId];
+	var room = null; 
 	
-	socket.join(roomId);
 
-	room.get_state(socket);
-	room.add_player(player);
-	console.log(room.players.join(", "));
+	socket.on('join_room', function(roomId) {
+		socket.join(roomId);
+
+		//If the room doesn't exist create it
+		if(rooms[roomId] == undefined) {
+			console.log("Creating room " + roomId);
+			rooms[roomId] = new Room(roomId);
+		}
+
+		room = rooms[roomId];
+
+		//Add the player to the room
+		room.get_state(socket);
+		room.add_player(player);
+	});
 
 	socket.on('update_player', function(id, x, y, xDir, yDir) {
 		room.update_player(id, x, y, xDir, yDir);
