@@ -28,11 +28,15 @@ io.sockets.on('connection', function(socket) {
 	});
 
 	socket.on('update_player', function(id, x, y, xDir, yDir) {
-		room.update_player(id, x, y, xDir, yDir);
+		if(room != undefined) {
+			room.update_player(id, x, y, xDir, yDir);
+		}
 	});
 
 	socket.on('disconnect', function() {
-		room.remove_player(player.id);
+		if(room != undefined) {
+			room.remove_player(player.id);
+		}
 	});
 });
 
